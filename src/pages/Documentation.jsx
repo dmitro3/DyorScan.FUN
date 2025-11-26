@@ -446,7 +446,7 @@ function Documentation() {
             <Link to="/">Home</Link>
             <Link to="/docs">Documentation</Link>
             <a href="/#how-it-works">How It Works</a>
-            <a href="https://github.com/LolyxMoon/DyorScan.FUN" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/DyorScanFUN" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>
           <div className="app-footer-text">
             Built with React, Vite, OpenAI & Supabase • Always DYOR
