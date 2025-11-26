@@ -278,7 +278,7 @@ DYOR (Do Your Own Research) Scanner is an AI-powered tool for analyzing Solana a
 • GPT-4 - Intelligent analysis
 
 🌐 Website: https://dyorscan.io
-🐦 Twitter: https://x.com/dyorscan
+🐦 Twitter: https://x.com/dyorhub
 📧 API Access: Available on our website
 
 *Disclaimer:*
