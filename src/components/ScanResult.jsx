@@ -334,7 +334,7 @@ function ScanResult({ result }) {
 
       <div className="result-actions">
         <a 
-          href={`https://www.dexview.com/solana/${contractAddress}`}
+          href={`https://dexscreener.com/solana/${contractAddress}`}
           target="_blank"
           rel="noopener noreferrer"
           className="btn-view-chart"

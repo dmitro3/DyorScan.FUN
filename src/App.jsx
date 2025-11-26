@@ -222,7 +222,7 @@ function AppContent() {
       <main className="app-main">
         <section className="hero-section">
           <div className="hero-content">
-            <div className="hero-badge">POWERED BY AI</div>
+            <div className="hero-badge">CA:</div>
             <h1 className="hero-title">Verify Token Narratives<br/>Before You Invest</h1>
             <p className="hero-subtitle">AI-powered analysis that extracts claims, identifies entities, and verifies narratives from Solana and BNB token data. Make informed decisions with real-time market intelligence.</p>
             
