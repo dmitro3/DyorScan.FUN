@@ -227,7 +227,7 @@ function AppContent() {
       <main className="app-main">
         <section className="hero-section">
           <div className="hero-content">
-            <div className="hero-badge">POWERED BY AI</div>
+            <div className="hero-badge">CA: xxxxxxxx</div>
             <h1 className="hero-title">Verify Token Narratives<br/>Before You Invest</h1>
             <p className="hero-subtitle">AI-powered analysis that extracts claims, identifies entities, and verifies narratives from Solana and BNB token data. Make informed decisions with real-time market intelligence.</p>
             
@@ -498,7 +498,7 @@ function AppContent() {
             <Link to="/">Home</Link>
             <Link to="/docs">Documentation</Link>
             <a href="#how-it-works" onClick={scrollToHowItWorks}>How It Works</a>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://github.com/LolyxMoon/DyorScan.FUN" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>
           <div className="app-footer-text">
             Built with React, Vite, OpenAI & Supabase • Always DYOR
