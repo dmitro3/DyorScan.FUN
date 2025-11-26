@@ -155,7 +155,7 @@ function formatScanResult(result) {
     message += `\n`;
   }
   
-  message += `🔗 View full report: https://dyorscan.io\n`;
+  message += `🔗 View full report: https://www.dyorscan.fun/\n`;
   message += `📱 Scan more tokens: Send another contract address`;
   
   return message;
@@ -277,8 +277,8 @@ DYOR (Do Your Own Research) Scanner is an AI-powered tool for analyzing Solana a
 • Social media - Community sentiment
 • GPT-4 - Intelligent analysis
 
-🌐 Website: https://dyorscan.io
-🐦 Twitter: https://x.com/dyorhub
+🌐 Website: https://www.dyorscan.fun/
+🐦 Twitter: https://x.com/DyorScanFun
 📧 API Access: Available on our website
 
 *Disclaimer:*
@@ -362,7 +362,7 @@ Please send a valid contract address:
         ],
         [
           { text: '🔍 Scan Another Token', callback_data: 'scan_another' },
-          { text: '📊 View on Website', url: 'https://dyorscan.io' },
+          { text: '📊 View on Website', url: 'https://www.dyorscan.fun/' },
         ],
       ],
     };

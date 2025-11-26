@@ -304,7 +304,7 @@ For 1,000 scans/month: ~$1-2 in AI costs
 ## Support
 
 - Website: 
-- Twitter: https://x.com/dyorhub
+- Twitter: https://x.com/DyorScanFun
 - Issues: GitHub Issues page
 
 ## License
