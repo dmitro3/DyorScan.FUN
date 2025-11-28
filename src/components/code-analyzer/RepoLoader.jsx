@@ -9,7 +9,7 @@ const LOADING_STEPS = [
 
 export function RepoLoader({ owner, repo, currentStep = 0, error = null }) {
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="code-analyzer-scope min-h-screen bg-black flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

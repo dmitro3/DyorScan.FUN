@@ -137,7 +137,7 @@ export function RepoSidebar({
     <>
       {isOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          className="code-analyzer-scope md:hidden fixed inset-0 bg-black/50 z-40"
           onClick={onClose}
         />
       )}
@@ -224,7 +224,7 @@ export function RepoSidebar({
       </div>
 
       {showHiddenFiles && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="code-analyzer-scope fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/10 rounded-xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
             <div className="p-4 border-b border-white/10 flex items-center justify-between bg-zinc-900/50">
               <h3 className="font-semibold text-white flex items-center gap-2">

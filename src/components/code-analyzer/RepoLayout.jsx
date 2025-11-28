@@ -20,7 +20,7 @@ export function RepoLayout({ repoContext, hiddenFiles = [], repoData }) {
   }, []);
 
   return (
-    <div className="h-screen flex bg-black overflow-hidden">
+    <div className="code-analyzer-scope h-screen flex bg-black overflow-hidden">
       <RepoSidebar
         fileTree={repoContext.fileTree}
         repoName={`${repoContext.owner}/${repoContext.repo}`}

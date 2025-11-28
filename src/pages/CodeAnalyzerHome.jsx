@@ -39,7 +39,7 @@ export function CodeAnalyzerHome() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="code-analyzer-scope min-h-screen bg-black text-white">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Background gradient */}

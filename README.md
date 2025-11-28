@@ -18,24 +18,9 @@ cp .env.example .env
 npm run dev
 ```
 
-## ⚠️ IMPORTANTE: Tailwind CSS Requerido
+## ✅ NO requiere Tailwind
 
-Este proyecto usa **Tailwind CSS**. Si el frontend aparece deformado o sin estilos, verifica que:
-
-1. Las dependencias de Tailwind estén instaladas:
-```bash
-npm install -D tailwindcss postcss autoprefixer
-npm install @tailwindcss/typography
-```
-
-2. El archivo `src/main.jsx` importe Tailwind:
-```jsx
-import './styles/tailwind.css'
-```
-
-3. Los archivos de configuración existan:
-- `tailwind.config.js`
-- `postcss.config.js`
+Este proyecto usa **CSS puro con scope** para no interferir con tus estilos existentes. Los estilos del Code Analyzer están aislados dentro de `.code-analyzer-scope`.
 
 ## 📁 Estructura del Proyecto
 
@@ -68,15 +53,13 @@ import './styles/tailwind.css'
 │   │   └── markdown-utils.js
 │   │
 │   ├── pages/
-│   │   ├── CodeAnalyzer.jsx    # Router wrapper
+│   │   ├── CodeAnalyzer.jsx    # Router wrapper (importa CSS)
 │   │   ├── CodeAnalyzerHome.jsx # Landing page
 │   │   └── CodeAnalyzerChat.jsx # Chat page
 │   │
 │   └── styles/
-│       └── tailwind.css        # Tailwind + custom styles
+│       └── code-analyzer-styles.css  # CSS aislado con scope
 │
-├── tailwind.config.js
-├── postcss.config.js
 └── vercel.json
 ```
 
@@ -117,14 +100,21 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxx
 
 ## 🔄 Integración con Proyecto Existente
 
-Si ya tienes un proyecto DYOR Scanner:
+Para integrar en tu proyecto DYOR Scanner existente:
 
 1. Copia la carpeta `src/components/code-analyzer/`
 2. Copia la carpeta `src/lib/code-analyzer/`
 3. Copia la carpeta `api/code-analyzer/`
-4. Copia las páginas de `src/pages/CodeAnalyzer*.jsx`
-5. Agrega Tailwind si no lo tienes
-6. Actualiza tu `App.jsx` con las rutas
+4. Copia `src/styles/code-analyzer-styles.css`
+5. Copia las páginas de `src/pages/CodeAnalyzer*.jsx`
+6. En tu `App.jsx`, agrega las rutas:
+   ```jsx
+   import CodeAnalyzer from './pages/CodeAnalyzer';
+   
+   // En tus Routes:
+   <Route path="/code-analyzer" element={<CodeAnalyzer />} />
+   <Route path="/code-analyzer/:owner/:repo" element={<CodeAnalyzer />} />
+   ```
 
 ## 📦 Dependencias Clave
 
@@ -138,10 +128,18 @@ Si ya tienes un proyecto DYOR Scanner:
     "react-markdown": "^9.x",
     "react-syntax-highlighter": "^15.x",
     "remark-gfm": "^4.x"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.x",
-    "@tailwindcss/typography": "^0.5.x"
   }
 }
 ```
+
+## 💡 Cómo funciona el scope
+
+Los estilos del Code Analyzer están todos dentro de `.code-analyzer-scope`, lo que significa que NO afectarán a tu sitio existente.
+
+Cada componente raíz tiene esta clase:
+- `CodeAnalyzerHome.jsx` → `<div className="code-analyzer-scope ...">`
+- `RepoLoader.jsx` → `<div className="code-analyzer-scope ...">`
+- `RepoLayout.jsx` → `<div className="code-analyzer-scope ...">`
+- Todos los modales → `<div className="code-analyzer-scope ...">`
+
+El archivo `code-analyzer-styles.css` contiene todas las clases necesarias con el prefijo `.code-analyzer-scope`.

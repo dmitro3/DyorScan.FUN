@@ -2,6 +2,9 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { CodeAnalyzerHome } from "./CodeAnalyzerHome";
 import { CodeAnalyzerChat } from "./CodeAnalyzerChat";
 
+// Importar estilos SOLO para Code Analyzer (sin Tailwind)
+import "../styles/code-analyzer-styles.css";
+
 export default function CodeAnalyzer() {
   const { owner, repo } = useParams();
   const [searchParams] = useSearchParams();
