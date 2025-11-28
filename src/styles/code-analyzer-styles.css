@@ -20,10 +20,13 @@
 }
 
 /* ===== LAYOUT ===== */
+.code-analyzer-scope.min-h-screen,
 .code-analyzer-scope .min-h-screen { min-height: 100vh; }
+.code-analyzer-scope.h-screen,
 .code-analyzer-scope .h-screen { height: 100vh; }
 .code-analyzer-scope .h-full { height: 100%; }
 .code-analyzer-scope .w-full { width: 100%; }
+.code-analyzer-scope .min-w-0 { min-width: 0; }
 .code-analyzer-scope .w-64 { width: 16rem; }
 .code-analyzer-scope .max-w-3xl { max-width: 48rem; }
 .code-analyzer-scope .max-w-md { max-width: 28rem; }
@@ -37,10 +40,14 @@
 .code-analyzer-scope .max-h-\[90vh\] { max-height: 90vh; }
 
 /* ===== FLEXBOX ===== */
+.code-analyzer-scope.flex,
 .code-analyzer-scope .flex { display: flex; }
+.code-analyzer-scope.inline-flex,
 .code-analyzer-scope .inline-flex { display: inline-flex; }
+.code-analyzer-scope.flex-col,
 .code-analyzer-scope .flex-col { flex-direction: column; }
 .code-analyzer-scope .flex-row { flex-direction: row; }
+.code-analyzer-scope.flex-1,
 .code-analyzer-scope .flex-1 { flex: 1 1 0%; }
 .code-analyzer-scope .flex-shrink-0 { flex-shrink: 0; }
 .code-analyzer-scope .flex-grow { flex-grow: 1; }
@@ -169,6 +176,7 @@
 .code-analyzer-scope .whitespace-nowrap { white-space: nowrap; }
 
 /* ===== COLORS ===== */
+.code-analyzer-scope.text-white,
 .code-analyzer-scope .text-white { color: #ffffff; }
 .code-analyzer-scope .text-black { color: #000000; }
 .code-analyzer-scope .text-gray-300 { color: #d1d5db; }
@@ -191,6 +199,7 @@
 .code-analyzer-scope .text-orange-400 { color: #fb923c; }
 .code-analyzer-scope .text-cyan-400 { color: #22d3ee; }
 
+.code-analyzer-scope.bg-black,
 .code-analyzer-scope .bg-black { background-color: #000000; }
 .code-analyzer-scope .bg-white { background-color: #ffffff; }
 .code-analyzer-scope .bg-transparent { background-color: transparent; }
@@ -274,6 +283,7 @@
 .code-analyzer-scope .backdrop-blur { backdrop-filter: blur(8px); }
 
 /* ===== OVERFLOW ===== */
+.code-analyzer-scope.overflow-hidden,
 .code-analyzer-scope .overflow-hidden { overflow: hidden; }
 .code-analyzer-scope .overflow-auto { overflow: auto; }
 .code-analyzer-scope .overflow-x-auto { overflow-x: auto; }
