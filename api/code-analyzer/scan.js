@@ -1,372 +1,200 @@
-// API Route: /api/code-analyzer/scan
-// Security vulnerability scanning
+// Vercel Serverless Function for security scanning
 
-import OpenAI from "openai";
-import { Octokit } from "octokit";
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const octokit = new Octokit(
-  process.env.GITHUB_TOKEN ? { auth: process.env.GITHUB_TOKEN } : {}
-);
+// Security patterns to detect
+const SECURITY_PATTERNS = [
+  {
+    pattern: /eval\s*\(/gi,
+    title: "Unsafe eval() usage",
+    severity: "high",
+    description: "Using eval() can execute arbitrary code and is a security risk",
+    recommendation: "Use safer alternatives like JSON.parse() or Function constructor",
+  },
+  {
+    pattern: /innerHTML\s*=/gi,
+    title: "Potential XSS via innerHTML",
+    severity: "medium",
+    description: "Setting innerHTML directly can lead to Cross-Site Scripting (XSS) attacks",
+    recommendation: "Use textContent or sanitize HTML before insertion",
+  },
+  {
+    pattern: /dangerouslySetInnerHTML/gi,
+    title: "Dangerous React HTML injection",
+    severity: "medium",
+    description: "dangerouslySetInnerHTML can lead to XSS if input is not sanitized",
+    recommendation: "Ensure all data is properly sanitized before using",
+  },
+  {
+    pattern: /(password|secret|api[_-]?key|token)\s*[:=]\s*['"][^'"]{8,}['"]/gi,
+    title: "Potential hardcoded secret",
+    severity: "critical",
+    description: "Hardcoded credentials or API keys detected in source code",
+    recommendation: "Use environment variables or secret management services",
+  },
+  {
+    pattern: /exec\s*\(|spawn\s*\(|execSync/gi,
+    title: "Command execution",
+    severity: "high",
+    description: "Direct command execution can lead to command injection attacks",
+    recommendation: "Validate and sanitize all inputs, use parameterized commands",
+  },
+  {
+    pattern: /SQL.*\+.*\$|`.*SELECT.*\$|\$\{.*\}.*WHERE/gi,
+    title: "Potential SQL injection",
+    severity: "critical",
+    description: "String concatenation in SQL queries can lead to SQL injection",
+    recommendation: "Use parameterized queries or an ORM",
+  },
+  {
+    pattern: /md5|sha1\s*\(/gi,
+    title: "Weak cryptographic algorithm",
+    severity: "medium",
+    description: "MD5 and SHA1 are considered weak for security purposes",
+    recommendation: "Use SHA-256 or bcrypt for password hashing",
+  },
+  {
+    pattern: /cors\s*:\s*\*|Access-Control-Allow-Origin.*\*/gi,
+    title: "Permissive CORS configuration",
+    severity: "medium",
+    description: "Allowing all origins can expose the API to cross-origin attacks",
+    recommendation: "Restrict CORS to specific trusted domains",
+  },
+  {
+    pattern: /http:\/\/(?!localhost|127\.0\.0\.1)/gi,
+    title: "Non-HTTPS URL",
+    severity: "low",
+    description: "Using HTTP instead of HTTPS can expose data in transit",
+    recommendation: "Use HTTPS for all external communications",
+  },
+  {
+    pattern: /\.env|process\.env\.[A-Z_]+/gi,
+    title: "Environment variable usage",
+    severity: "info",
+    description: "Environment variables detected - ensure .env files are gitignored",
+    recommendation: "Verify .gitignore includes .env files",
+  },
+];
 
 export const config = {
   maxDuration: 60,
 };
-
-// Security patterns to scan for
-const SECURITY_PATTERNS = [
-  {
-    id: "hardcoded-api-key",
-    type: "Hardcoded Secret",
-    severity: "critical",
-    pattern: /(api[_-]?key|apikey)\s*[:=]\s*['"][a-zA-Z0-9_\-]{20,}['"]/gi,
-    title: "Hardcoded API Key",
-    description: "API key appears to be hardcoded in source code",
-    fix: "Move API keys to environment variables",
-  },
-  {
-    id: "hardcoded-secret",
-    type: "Hardcoded Secret",
-    severity: "critical",
-    pattern: /(secret|password|passwd|pwd)\s*[:=]\s*['"][^'"]{8,}['"]/gi,
-    title: "Hardcoded Secret/Password",
-    description: "Secret or password appears to be hardcoded",
-    fix: "Use environment variables or a secrets manager",
-  },
-  {
-    id: "aws-key",
-    type: "Hardcoded Secret",
-    severity: "critical",
-    pattern: /AKIA[0-9A-Z]{16}/g,
-    title: "AWS Access Key",
-    description: "AWS access key ID found in source code",
-    fix: "Remove and rotate the AWS key immediately",
-  },
-  {
-    id: "eval-usage",
-    type: "Code Injection",
-    severity: "critical",
-    pattern: /\beval\s*\([^)]+\)/g,
-    title: "eval() Usage",
-    description: "eval() can execute arbitrary code",
-    fix: "Avoid eval(); use safer alternatives",
-  },
-  {
-    id: "innerhtml",
-    type: "XSS",
-    severity: "high",
-    pattern: /\.innerHTML\s*=\s*[^;]+/g,
-    title: "innerHTML Assignment",
-    description: "Direct innerHTML assignment may enable XSS",
-    fix: "Use textContent or sanitize HTML",
-  },
-  {
-    id: "dangerously-set-html",
-    type: "XSS",
-    severity: "high",
-    pattern: /dangerouslySetInnerHTML/g,
-    title: "dangerouslySetInnerHTML Usage",
-    description: "Bypasses React's XSS protection",
-    fix: "Sanitize content with DOMPurify",
-  },
-  {
-    id: "sql-injection",
-    type: "SQL Injection",
-    severity: "high",
-    pattern: /(\$\{|\+\s*)(req\.|request\.|params\.|query\.|body\.)/g,
-    title: "Potential SQL Injection",
-    description: "User input may be concatenated into SQL",
-    fix: "Use parameterized queries",
-  },
-  {
-    id: "exec-injection",
-    type: "Command Injection",
-    severity: "critical",
-    pattern: /(exec|execSync|spawn)\s*\([^)]*(\$\{|req\.|params\.)/g,
-    title: "Command Injection Risk",
-    description: "User input may be passed to shell",
-    fix: "Sanitize input; avoid shell execution",
-  },
-  {
-    id: "cors-wildcard",
-    type: "Misconfiguration",
-    severity: "medium",
-    pattern: /cors\s*\(\s*\{\s*origin\s*:\s*['"]?\*['"]?/gi,
-    title: "CORS Wildcard Origin",
-    description: "CORS allows any origin",
-    fix: "Restrict to trusted origins",
-  },
-  {
-    id: "md5-usage",
-    type: "Weak Cryptography",
-    severity: "medium",
-    pattern: /createHash\s*\(\s*['"]md5['"]\)/gi,
-    title: "MD5 Hash Usage",
-    description: "MD5 is cryptographically broken",
-    fix: "Use SHA-256 or stronger",
-  },
-];
-
-const CODE_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx", ".py", ".rb", ".php", ".go"];
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { owner, repo, filePaths } = req.body;
+  const { owner, repo, files = [] } = req.body;
 
   if (!owner || !repo) {
     return res.status(400).json({ error: "Missing owner or repo" });
   }
 
-  // Set up SSE
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  const sendEvent = (type, data) => {
-    res.write(`data: ${JSON.stringify({ type, data })}\n\n`);
+  const headers = {
+    Accept: "application/vnd.github.v3+json",
+    "User-Agent": "DYOR-Code-Analyzer",
   };
+
+  if (GITHUB_TOKEN) {
+    headers.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  }
 
   try {
     // Filter to code files only
-    const codeFiles = (filePaths || [])
-      .filter((path) => {
-        const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
-        return CODE_EXTENSIONS.includes(ext);
-      })
-      .slice(0, 20); // Limit to 20 files
-
-    if (codeFiles.length === 0) {
-      sendEvent("error", { message: "No code files found to scan" });
-      return res.end();
-    }
-
-    sendEvent("status", { 
-      message: `Scanning ${codeFiles.length} files...`, 
-      progress: 10 
-    });
-
-    // Fetch file contents
-    const files = await fetchFiles(owner, repo, codeFiles, sendEvent);
-
-    sendEvent("status", { 
-      message: "Running pattern-based scan...", 
-      progress: 40 
-    });
-
-    // Pattern-based scan
-    const patternFindings = runPatternScan(files);
-
-    sendEvent("status", { 
-      message: "Running AI analysis...", 
-      progress: 60 
-    });
-
-    // AI-powered scan for more nuanced issues
-    const aiFindings = await runAIScan(files);
-
-    // Combine and deduplicate
-    const allFindings = deduplicateFindings([...patternFindings, ...aiFindings]);
-
-    // Filter to high confidence only
-    const filteredFindings = allFindings.filter(
-      (f) => f.severity === "critical" || f.severity === "high" || f.confidence === "high"
+    const codeExtensions = /\.(js|jsx|ts|tsx|py|java|php|rb|go|rs)$/i;
+    const codeFiles = files.filter(
+      (f) => codeExtensions.test(f.path) || f.path === "package.json"
     );
 
-    sendEvent("status", { message: "Generating summary...", progress: 90 });
+    // Limit to 20 files
+    const filesToScan = codeFiles.slice(0, 20);
+    const findings = [];
+    let filesScanned = 0;
 
-    const grouped = groupBySeverity(filteredFindings);
-    const summary = generateSummary(filteredFindings);
+    // Fetch and scan each file
+    for (const file of filesToScan) {
+      try {
+        const response = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(file.path)}`,
+          { headers }
+        );
 
-    sendEvent("complete", {
-      findings: filteredFindings,
-      grouped,
-      summary,
-      scannedFiles: codeFiles.length,
-      totalFindings: filteredFindings.length,
-    });
+        if (!response.ok) continue;
 
-    sendEvent("status", { message: "Complete", progress: 100 });
-  } catch (error) {
-    console.error("Scan error:", error);
-    sendEvent("error", { message: error.message || "Scan failed" });
-  } finally {
-    res.end();
-  }
-}
+        const data = await response.json();
+        if (!data.content) continue;
 
-// Fetch files from GitHub
-async function fetchFiles(owner, repo, paths, sendEvent) {
-  const results = [];
+        const content = Buffer.from(data.content, "base64").toString("utf-8");
+        filesScanned++;
 
-  for (let i = 0; i < paths.length; i += 5) {
-    const batch = paths.slice(i, i + 5);
-    const progress = Math.round(10 + (i / paths.length) * 30);
-    sendEvent("status", { 
-      message: `Fetching files (${i + batch.length}/${paths.length})...`, 
-      progress 
-    });
+        // Run pattern matching
+        const lines = content.split("\n");
 
-    const batchResults = await Promise.all(
-      batch.map(async (path) => {
-        try {
-          const { data } = await octokit.rest.repos.getContent({ owner, repo, path });
-          if (data.type !== "file") return { path, content: null };
-          const content = Buffer.from(data.content, "base64").toString("utf-8");
-          return { path, content };
-        } catch (e) {
-          return { path, content: null };
-        }
-      })
-    );
+        for (const pattern of SECURITY_PATTERNS) {
+          // Skip info-level for cleaner results
+          if (pattern.severity === "info") continue;
 
-    results.push(...batchResults.filter((f) => f.content));
-  }
+          let match;
+          const regex = new RegExp(pattern.pattern.source, pattern.pattern.flags);
 
-  return results;
-}
+          while ((match = regex.exec(content)) !== null) {
+            // Find line number
+            const beforeMatch = content.substring(0, match.index);
+            const lineNumber = beforeMatch.split("\n").length;
 
-// Pattern-based security scan
-function runPatternScan(files) {
-  const findings = [];
+            // Avoid duplicates
+            const isDuplicate = findings.some(
+              (f) =>
+                f.file === file.path &&
+                f.title === pattern.title &&
+                Math.abs(f.line - lineNumber) < 5
+            );
 
-  for (const file of files) {
-    if (!file.content) continue;
-    const lines = file.content.split("\n");
+            if (!isDuplicate) {
+              findings.push({
+                title: pattern.title,
+                severity: pattern.severity,
+                description: pattern.description,
+                recommendation: pattern.recommendation,
+                file: file.path,
+                line: lineNumber,
+              });
+            }
 
-    for (const pattern of SECURITY_PATTERNS) {
-      pattern.pattern.lastIndex = 0;
-      let match;
-
-      while ((match = pattern.pattern.exec(file.content)) !== null) {
-        // Find line number
-        const position = match.index;
-        let lineNumber = 1;
-        let charCount = 0;
-
-        for (let i = 0; i < lines.length; i++) {
-          charCount += lines[i].length + 1;
-          if (charCount > position) {
-            lineNumber = i + 1;
-            break;
+            // Prevent infinite loop
+            if (regex.lastIndex === match.index) {
+              regex.lastIndex++;
+            }
           }
         }
-
-        findings.push({
-          id: `${pattern.id}-${file.path}-${lineNumber}`,
-          file: file.path,
-          line: lineNumber,
-          type: pattern.type,
-          severity: pattern.severity,
-          title: pattern.title,
-          description: pattern.description,
-          fix: pattern.fix,
-          confidence: "high",
-          source: "pattern",
-        });
+      } catch (e) {
+        console.error(`Error scanning ${file.path}:`, e);
       }
     }
-  }
 
-  return findings;
-}
+    // Sort by severity
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+    findings.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-// AI-powered security analysis
-async function runAIScan(files) {
-  const fileContents = files
-    .slice(0, 10) // Limit for AI analysis
-    .map((f) => `--- ${f.path} ---\n${f.content.slice(0, 5000)}`)
-    .join("\n\n");
+    // Build summary
+    const summary = {
+      total: findings.length,
+      critical: findings.filter((f) => f.severity === "critical").length,
+      high: findings.filter((f) => f.severity === "high").length,
+      medium: findings.filter((f) => f.severity === "medium").length,
+      low: findings.filter((f) => f.severity === "low").length,
+      debug: {
+        totalFilesProvided: files.length,
+        codeFilesFound: codeFiles.length,
+        filesSuccessfullyFetched: filesScanned,
+      },
+    };
 
-  const prompt = `Analyze these code files for security vulnerabilities:
-
-${fileContents}
-
-Find security issues not caught by simple patterns. Look for:
-- Logic flaws in authentication/authorization
-- Insecure data handling
-- Race conditions
-- Information leakage
-- Improper error handling exposing sensitive data
-
-Return JSON only:
-{
-  "findings": [
-    {
-      "file": "path/to/file.js",
-      "line": 42,
-      "type": "Category",
-      "severity": "critical|high|medium|low",
-      "title": "Short title",
-      "description": "What's wrong",
-      "fix": "How to fix"
-    }
-  ]
-}
-
-If no issues found, return {"findings": []}`;
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a security expert. Return only valid JSON." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
-    });
-
-    const content = response.choices[0].message.content.trim();
-    const parsed = JSON.parse(content.replace(/```json\n?|\n?```/g, ""));
-
-    return (parsed.findings || []).map((f) => ({
-      ...f,
-      id: `ai-${f.file}-${f.line}-${Date.now()}`,
-      confidence: "medium",
-      source: "ai",
-    }));
+    return res.status(200).json({ findings, summary });
   } catch (error) {
-    console.error("AI scan error:", error);
-    return [];
+    console.error("Scan error:", error);
+    return res.status(500).json({ error: error.message });
   }
-}
-
-// Deduplicate findings
-function deduplicateFindings(findings) {
-  const seen = new Set();
-  return findings.filter((f) => {
-    const key = `${f.file}:${f.line}:${f.title}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-// Group by severity
-function groupBySeverity(findings) {
-  return {
-    critical: findings.filter((f) => f.severity === "critical"),
-    high: findings.filter((f) => f.severity === "high"),
-    medium: findings.filter((f) => f.severity === "medium"),
-    low: findings.filter((f) => f.severity === "low"),
-  };
-}
-
-// Generate summary
-function generateSummary(findings) {
-  const total = findings.length;
-  if (total === 0) return "No security vulnerabilities detected.";
-
-  const grouped = groupBySeverity(findings);
-  const parts = [];
-
-  if (grouped.critical.length) parts.push(`${grouped.critical.length} critical`);
-  if (grouped.high.length) parts.push(`${grouped.high.length} high`);
-  if (grouped.medium.length) parts.push(`${grouped.medium.length} medium`);
-  if (grouped.low.length) parts.push(`${grouped.low.length} low`);
-
-  return `Found ${total} potential issue${total !== 1 ? "s" : ""}: ${parts.join(", ")}`;
 }
