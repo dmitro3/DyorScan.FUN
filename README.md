@@ -1,279 +1,147 @@
-# DYOR Scanner
-<a href="https://freeimage.host/"><img src="https://iili.io/fqDw9ft.png" alt="fqDw9ft.png" border="0" /></a>
-AI-powered token narrative verification tool for Solana. Analyze token claims, verify narratives, and assess risks before investing.
+# DYOR Code Analyzer - RepoMind Style
 
-## Overview
+Frontend de análisis de repositorios GitHub con estilo RepoMind, convertido de Next.js a React + Vite.
 
-DYOR Scanner is an intelligent analysis platform that helps investors make informed decisions by extracting, verifying, and classifying token narratives. It combines real-time market data, security analysis, and advanced AI to provide comprehensive token intelligence in seconds.
+## 🚀 Instalación Rápida
 
-## Features
-
-### Core Capabilities
-
-- **Narrative Extraction**: AI-powered analysis that identifies core claims, entities, and themes from token information
-- **Reality Verification**: Classifies narratives as CONFIRMED, PARTIAL, or UNVERIFIED with confidence levels
-- **Security Analysis**: Automated risk assessment including mint authority, freeze risks, and red flags
-- **Market Intelligence**: Real-time price, liquidity, volume, and trading metrics
-- **Social Presence**: Aggregates social links and community activity
-- **Comprehensive Reports**: Detailed analysis with actionable insights, downloadable as PDF
-
-### Analysis Components
-
-- **Narrative Analysis**: Extracts and verifies token claims using GPT-4
-- **Security Check**: Identifies potential vulnerabilities and risks
-- **Hype Meter**: Measures community sentiment and momentum
-- **Overall Score**: 0-100 rating based on all metrics
-- **Red Flags Detection**: Automatically identifies concerns and warnings
-
-## Tech Stack
-
-- **Frontend**: React 19, Vite, React Router
-- **Backend**: Vercel Serverless Functions, Node.js
-- **AI**: OpenAI GPT-4o-mini
-- **Database**: Supabase (PostgreSQL)
-- **APIs**: DexScreener, RugCheck, Helius
-- **Telegram**: node-telegram-bot-api
-- **PDF Generation**: jsPDF, html2canvas
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- Supabase account
-- OpenAI API key
-
-### Installation
-
-1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/dyor.git
-cd dyor
-```
-
-2. Install dependencies:
-```bash
+# 1. Instalar dependencias
 npm install
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tus keys:
+# GITHUB_TOKEN=ghp_xxx
+# OPENAI_API_KEY=sk-xxx
+
+# 3. Iniciar desarrollo
+npm run dev
 ```
 
-3. Set up environment variables:
+## ⚠️ IMPORTANTE: Tailwind CSS Requerido
 
-Create a `.env.local` file in the root directory:
+Este proyecto usa **Tailwind CSS**. Si el frontend aparece deformado o sin estilos, verifica que:
+
+1. Las dependencias de Tailwind estén instaladas:
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npm install @tailwindcss/typography
+```
+
+2. El archivo `src/main.jsx` importe Tailwind:
+```jsx
+import './styles/tailwind.css'
+```
+
+3. Los archivos de configuración existan:
+- `tailwind.config.js`
+- `postcss.config.js`
+
+## 📁 Estructura del Proyecto
+
+```
+├── api/code-analyzer/          # Vercel Serverless Functions
+│   ├── fetch.js                # Fetch repo con Git Trees API
+│   ├── chat.js                 # Chat streaming con GPT-4o-mini
+│   ├── analyze.js              # Selección de archivos relevantes
+│   ├── scan.js                 # Security scanning
+│   ├── search.js               # Búsqueda text/regex/AST
+│   ├── quality.js              # Análisis de calidad
+│   ├── generate.js             # Generación de docs/tests
+│   └── fix-mermaid.js          # AI fix para diagramas
+│
+├── src/
+│   ├── components/code-analyzer/
+│   │   ├── ChatInterface.jsx   # Chat principal
+│   │   ├── CodeBlock.jsx       # Syntax highlighting
+│   │   ├── Mermaid.jsx         # Diagramas con export PNG
+│   │   ├── DevTools.jsx        # Search/Quality/Generate
+│   │   ├── RepoSidebar.jsx     # File tree con stats
+│   │   ├── RepoLayout.jsx      # Layout principal
+│   │   ├── FilePreview.jsx     # Preview de archivos
+│   │   └── ...más componentes
+│   │
+│   ├── lib/code-analyzer/      # Utilidades
+│   │   ├── tokens.js
+│   │   ├── storage.js
+│   │   ├── diagram-utils.js
+│   │   └── markdown-utils.js
+│   │
+│   ├── pages/
+│   │   ├── CodeAnalyzer.jsx    # Router wrapper
+│   │   ├── CodeAnalyzerHome.jsx # Landing page
+│   │   └── CodeAnalyzerChat.jsx # Chat page
+│   │
+│   └── styles/
+│       └── tailwind.css        # Tailwind + custom styles
+│
+├── tailwind.config.js
+├── postcss.config.js
+└── vercel.json
+```
+
+## 🔧 Variables de Entorno
+
+Crear archivo `.env` en la raíz:
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-OPENAI_API_KEY=sk-your-openai-key
+# GitHub Personal Access Token (para aumentar rate limit)
+GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+
+# OpenAI API Key
+OPENAI_API_KEY=sk-xxxxxxxxxxxx
 ```
 
-4. Set up Supabase:
+## 🎨 Features
 
-Create a new Supabase project and run this SQL in the SQL editor:
+- ✅ Chat con streaming SSE
+- ✅ Diagramas Mermaid con export PNG
+- ✅ DevTools: Search, Quality Analysis, Generate
+- ✅ Security scanning
+- ✅ File preview modal
+- ✅ Sidebar con file tree y stats
+- ✅ Smart Links (auto-render GitHub cards)
+- ✅ Token counter con warnings
+- ✅ Persistencia de conversaciones
 
-```sql
-create table public.dyor_scans (
-  id bigint generated always as identity primary key,
-  contract_address text not null,
-  result_json jsonb not null,
-  created_at timestamptz default now()
-);
+## 📝 Rutas
 
-create index dyor_scans_contract_address_idx
-  on public.dyor_scans (contract_address);
-```
+- `/code-analyzer` - Landing page
+- `/code-analyzer/:owner/:repo` - Chat de repositorio
 
-5. Run the development server:
-```bash
-npm run dev
-```
+## 🚀 Deploy en Vercel
 
-The application will be available at `http://localhost:5173`
+1. Conectar repo a Vercel
+2. Configurar variables de entorno en Vercel Dashboard
+3. Deploy automático
 
-## Usage
+## 🔄 Integración con Proyecto Existente
 
-1. Enter a Solana token contract address in the scanner
-2. Wait for the analysis to complete (typically 3-5 seconds)
-3. Review the comprehensive report including:
-   - Narrative claim and entities
-   - Verdict (CONFIRMED/PARTIAL/UNVERIFIED) with confidence level
-   - Market data and metrics
-   - Security analysis
-   - Red flags (if any)
-   - Detailed reasoning and notes
+Si ya tienes un proyecto DYOR Scanner:
 
-4. Export results as PDF or copy the full report
+1. Copia la carpeta `src/components/code-analyzer/`
+2. Copia la carpeta `src/lib/code-analyzer/`
+3. Copia la carpeta `api/code-analyzer/`
+4. Copia las páginas de `src/pages/CodeAnalyzer*.jsx`
+5. Agrega Tailwind si no lo tienes
+6. Actualiza tu `App.jsx` con las rutas
 
-## Telegram Bot
-
-DYOR Scanner is also available as a Telegram bot! Analyze tokens directly in Telegram by sending contract addresses to the bot.
-
-### Features
-
-- Instant token analysis via Telegram
-- Same powerful AI analysis as the web app
-- Real-time market data and security checks
-- Simple conversational interface
-- No need to open a browser
-
-### Quick Start
-
-1. Get a Telegram bot token from [@BotFather](https://t.me/botfather)
-2. Add `TELEGRAM_BOT_KEY` to your `.env` file
-3. Run: `npm run bot`
-4. Start chatting with your bot!
-
-For detailed setup instructions, see [TELEGRAM_BOT_SETUP.md](./TELEGRAM_BOT_SETUP.md)
-
-## API
-
-### Endpoint
-
-```
-POST /api/scan
-```
-
-### Request Body
+## 📦 Dependencias Clave
 
 ```json
 {
-  "contractAddress": "string (required)",
-  "forceRefresh": boolean (optional, default: false)
-}
-```
-
-### Response
-
-```json
-{
-  "cached": boolean,
-  "contractAddress": "string",
-  "tokenName": "string",
-  "symbol": "string",
-  "narrativeClaim": "string",
-  "entities": {
-    "organizations": ["string"],
-    "products": ["string"],
-    "topics": ["string"]
+  "dependencies": {
+    "framer-motion": "^12.x",
+    "lucide-react": "^0.469.x",
+    "mermaid": "^11.x",
+    "html2canvas-pro": "^1.x",
+    "react-markdown": "^9.x",
+    "react-syntax-highlighter": "^15.x",
+    "remark-gfm": "^4.x"
   },
-  "verdict": "CONFIRMED | PARTIAL | UNVERIFIED",
-  "confidence": "high | medium | low",
-  "redFlags": ["string"],
-  "marketData": { ... },
-  "socials": { ... },
-  "securityData": { ... },
-  "tokenScore": number,
-  "sentimentScore": number,
-  "summary": "string",
-  "fundamentalsAnalysis": "string",
-  "hypeAnalysis": "string",
-  "notesForUser": "string"
+  "devDependencies": {
+    "tailwindcss": "^3.4.x",
+    "@tailwindcss/typography": "^0.5.x"
+  }
 }
 ```
-
-## Understanding Verdicts
-
-### CONFIRMED
-The narrative references real, verifiable events, products, or announcements. Entities mentioned are real. **Note**: This does NOT mean the token is officially affiliated or safe.
-
-### PARTIAL
-The narrative mixes truth with hype or exaggeration. Real events may be referenced, but claims are stretched or imply unofficial associations.
-
-### UNVERIFIED
-The narrative's claims cannot be verified through available information. Entities or events may be fabricated, misleading, or too vague to verify. Exercise extreme caution.
-
-## Project Structure
-
-```
-dyor/
-├── api/
-│   ├── scan.js              # Vercel serverless function
-│   ├── request-api-key.js   # API key generation
-│   ├── usage.js             # API usage tracking
-│   └── utils/
-│       └── apiAuth.js       # API authentication
-├── server/
-│   ├── bot.js               # Telegram bot
-│   ├── scan.js              # Shared scan logic
-│   └── README.md            # Bot documentation
-├── src/
-│   ├── components/
-│   │   ├── ScanForm.jsx     # Input form component
-│   │   └── ScanResult.jsx   # Results display component
-│   ├── pages/
-│   │   ├── Documentation.jsx # Documentation page
-│   │   └── ApiKeys.jsx      # API key management
-│   ├── lib/
-│   │   └── supabaseClient.js # Supabase client
-│   ├── App.jsx              # Main application
-│   ├── main.jsx             # Entry point
-│   └── styles.css           # Global styles
-├── public/                  # Static assets
-├── package.json
-├── vite.config.js
-├── TELEGRAM_BOT_SETUP.md    # Bot quick start guide
-└── README.md
-```
-
-## Data Sources
-
-- **DexScreener**: Real-time market data, prices, liquidity, volume, and social links
-- **RugCheck**: Security analysis and risk assessment
-- **OpenAI GPT-4**: Narrative extraction, entity identification, and classification
-
-## Deployment
-
-### Vercel
-
-1. Connect your repository to Vercel
-2. Add environment variables in the Vercel dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
-   - `OPENAI_API_KEY`
-3. Deploy
-
-The API routes will automatically be deployed as serverless functions.
-
-## Development
-
-```bash
-# Start development server (web app)
-npm run dev
-
-# Start Telegram bot
-npm run bot
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Run linter
-npm run lint
-```
-
-## Limitations & Disclaimers
-
-- **Not Financial Advice**: DYOR Scanner provides analysis, not investment advice. Always do your own research.
-- **No Guarantees**: Verdicts are AI-generated assessments, not definitive truth. Use as one tool among many.
-- **Data Accuracy**: We rely on third-party APIs. Data may be incomplete or delayed.
-- **Narrative vs Reality**: A CONFIRMED verdict means the narrative references real events, NOT that the token is legitimate or safe.
-- **Always DYOR**: This tool is meant to assist your research, not replace it.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For issues, suggestions, or contributions, please open an issue on GitHub.
-
----
-
-Built with React, Vite, OpenAI GPT-4, and Supabase. Always DYOR.
